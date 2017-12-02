@@ -12,6 +12,7 @@ public class CarJourney {
     private String journeyStartTime;
     private String journeyEndTime;
     private String journeyDriverId;
+    private String journeyDate;
 
     public void setJourneyEndLat(String journeyEndLat) {
         this.journeyEndLat = journeyEndLat;
@@ -35,6 +36,22 @@ public class CarJourney {
 
     public void setJourneyStartTime(String journeyStartTime) {
         this.journeyStartTime = journeyStartTime;
+    }
+
+    public void setJourneyDate(String journeyDate) {
+        this.journeyDate = journeyDate;
+    }
+
+    public void setJourneyDriverId(String journeyDriverId) {
+        this.journeyDriverId = journeyDriverId;
+    }
+
+    public String getJourneyDate() {
+        return journeyDate;
+    }
+
+    public String getJourneyDriverId() {
+        return journeyDriverId;
     }
 
     public String getJourneyEndLat() {

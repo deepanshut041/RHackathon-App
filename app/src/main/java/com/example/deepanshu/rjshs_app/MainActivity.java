@@ -10,9 +10,11 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.example.deepanshu.rjshs_app.models.CarJourney;
@@ -36,15 +38,13 @@ public class MainActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private RecyclerView recyclerView;
     private TextView statusTextView, numberTextView, latTextView, lonTextView, tempTextView, fuelTextView;
-//    private PatientAdapter patientAdapter;
+    private JourneyAdapter journeyAdapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         //toolbar = (Toolbar) findViewById(R.id.main_toolbar);
         //setSupportActionBar(toolbar);
-
-
         //Stetting textView
         statusTextView = (TextView)findViewById(R.id.car_status_status);
         numberTextView = (TextView)findViewById(R.id.car_status_number);
@@ -55,14 +55,14 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        //recyclerView = (RecyclerView) findViewById(R.id.patient_recyclerView);
-        //LinearLayoutManager layoutManagerCast = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
-        //recyclerView.setLayoutManager(layoutManagerCast);
+        recyclerView = (RecyclerView) findViewById(R.id.car_journey_recyclerView);
+        LinearLayoutManager layoutManagerCast = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+        recyclerView.setLayoutManager(layoutManagerCast);
         StatusFetchTask statusFetchTask = new StatusFetchTask();
-        statusFetchTask.execute("http://594569d3.ngrok.io/api/v1/cars/AUBT9863/status/");
+        statusFetchTask.execute("http://f82cef4d.ngrok.io/api/v1/cars/AUBT9863/status/");
         JourneysFetchTask journeysFetchTask = new JourneysFetchTask();
-        journeysFetchTask.execute("http://594569d3.ngrok.io/api/v1/cars/AUBT9863/journeys/");
-        //recyclerView.setItemAnimator(new DefaultItemAnimator());
+        journeysFetchTask.execute("http://f82cef4d.ngrok.io/api/v1/cars/AUBT9863/journeys/");
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
     }
 
 //    @Override
@@ -313,7 +313,30 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String jsonData) {
-            Log.e("data-journey",jsonData);
+            ArrayList<CarJourney> carJourneysArrayList = new ArrayList<>();
+            super.onPostExecute(jsonData);
+            try {
+                JSONObject jsonObject = new JSONObject(jsonData);
+                JSONArray resultArray = jsonObject.getJSONArray("results");
+                for (int i=0; i < resultArray.length(); i++){
+                    JSONObject patient = (JSONObject) resultArray.get(i);
+                    Log.i("reults",patient.toString());
+                    CarJourney carJourney = new CarJourney();
+                    carJourney.setJourneyDriverId(patient.get("jdriver_id").toString());
+                    carJourney.setJourneyDate(patient.get("jdate").toString());
+                    carJourney.setJourneyStartLat(patient.get("jstart_lat").toString());
+                    carJourney.setJourneyStartLon(patient.get("jstart_lon").toString());
+                    carJourney.setJourneyEndLat(patient.get("jend_lat").toString());
+                    carJourney.setJourneyEndLon(patient.get("jend_lon").toString());
+                    carJourney.setJourneyStartTime(patient.get("jstart_time").toString());
+                    carJourney.setJourneyEndTime(patient.get("jend_time").toString());
+                    carJourneysArrayList.add(carJourney);
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            journeyAdapter = new JourneyAdapter(carJourneysArrayList);
+            recyclerView.setAdapter(journeyAdapter);
         }
 
         @Override
@@ -325,64 +348,44 @@ public class MainActivity extends AppCompatActivity {
         public ArrayList<CarJourney> carJourneys;
 
         class journeyViewHolder extends RecyclerView.ViewHolder {
-            TextView
-            ConstraintLayout constraintLayout;
+            TextView driverTextView, dateTextView, startCordTextView, endCordTextView, startTimeTextView, endTimeTextView;
 
             public journeyViewHolder(View itemView) {
                 super(itemView);
-                patientNo = (TextView) itemView.findViewById(R.id.patient_item_id);
-                patientName = (TextView) itemView.findViewById(R.id.patient_item_name);
-                patientGender = (TextView) itemView.findViewById(R.id.patient_item_gender);
-                constraintLayout = (ConstraintLayout) itemView.findViewById(R.id.patient_recyclerView);
+                driverTextView = (TextView) itemView.findViewById(R.id.journey_driver);
+                dateTextView = (TextView) itemView.findViewById(R.id.journey_date);
+                startCordTextView = (TextView) itemView.findViewById(R.id.journey_start_cord);
+                endCordTextView = (TextView) itemView.findViewById(R.id.journey_end_cord);
+                startTimeTextView = (TextView) itemView.findViewById(R.id.journey_start_time);
+                endTimeTextView = (TextView) itemView.findViewById(R.id.journey_end_time);
             }
         }
 
-        public PatientAdapter(Context context, ArrayList<PatientModel> arrayList) {
-            this.patientArrayList = arrayList;
-            this.patientContext = context;
+        public JourneyAdapter(ArrayList<CarJourney> arrayList) {
+            this.carJourneys = arrayList;
         }
 
         @Override
-        public patientViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.patient_recycler, parent, false);
-            return new patientViewHolder(itemView);
+        public journeyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.journey_recycler_view, parent, false);
+            return new journeyViewHolder(itemView);
         }
 
         @Override
-        public void onBindViewHolder(final patientViewHolder holder, int position) {
-            final PatientModel patientModel = patientArrayList.get(position);
+        public void onBindViewHolder(final journeyViewHolder holder, int position) {
+            final CarJourney journey = carJourneys.get(position);
 
-            holder.patientNo.setText(patientModel.getPatientId());
-            holder.patientName.setText(patientModel.getPatientName());
-            holder.patientGender.setText(patientModel.getPatientGender());
-            if (patientModel.getPatientStatus().equals("help")){
-                holder.constraintLayout.setBackgroundColor(patientContext.getResources().getColor(R.color.colorDanger));
-            }
-            holder.constraintLayout.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent intent = new Intent(patientContext, PatientDetailActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    Bundle mBundle = new Bundle();
-                    //mBundle.putString("type","celebs");
-                    mBundle.putString("id",patientModel.getPatientId());
-                    mBundle.putString("gender",patientModel.getPatientGender());
-                    mBundle.putString("loc",patientModel.getPatientLocation());
-                    mBundle.putString("name",patientModel.getPatientName());
-                    mBundle.putString("phn",patientModel.getPatientPhoneNumber());
-                    mBundle.putString("rate",patientModel.getPatientPulseRate());
-                    mBundle.putString("rtemp",patientModel.getPatientRoomtemp());
-                    mBundle.putString("status",patientModel.getPatientStatus());
-                    mBundle.putString("temp",patientModel.getPatientTemp());
-                    intent.putExtras(mBundle);
-                    patientContext.startActivity(intent);
-                }
-            });
+            holder.driverTextView.setText(journey.getJourneyDriverId());
+            holder.dateTextView.setText(journey.getJourneyDate());
+            holder.startCordTextView.setText(journey.getJourneyStartLat().substring(0,6) +"," + journey.getJourneyStartLon().substring(0,6));
+            holder.endCordTextView.setText(journey.getJourneyEndLat().substring(0,6) +"," + journey.getJourneyEndLon().substring(0,6));
+            holder.startTimeTextView.setText(journey.getJourneyStartTime().substring(0,8));
+            holder.endTimeTextView.setText(journey.getJourneyEndTime());
         }
 
         @Override
         public int getItemCount() {
-            return patientArrayList.size();
+            return carJourneys.size();
         }
     }
 

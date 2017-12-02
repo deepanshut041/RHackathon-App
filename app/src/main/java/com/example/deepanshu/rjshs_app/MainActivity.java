@@ -34,13 +34,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         //toolbar = (Toolbar) findViewById(R.id.main_toolbar);
-        setSupportActionBar(toolbar);
+        //setSupportActionBar(toolbar);
         //recyclerView = (RecyclerView) findViewById(R.id.patient_recyclerView);
-        LinearLayoutManager layoutManagerCast = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
-        recyclerView.setLayoutManager(layoutManagerCast);
-        CommonFetchTask commonFetchTask = new CommonFetchTask();
-        commonFetchTask.execute("http://594569d3.ngrok.io/api/v1/cars/AUBT9863/status/");
-        recyclerView.setItemAnimator(new DefaultItemAnimator());
+        //LinearLayoutManager layoutManagerCast = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+        //recyclerView.setLayoutManager(layoutManagerCast);
+        StatusFetchTask statusFetchTask = new StatusFetchTask();
+        statusFetchTask.execute("http://594569d3.ngrok.io/api/v1/cars/AUBT9863/status/");
+        JourneysFetchTask journeysFetchTask = new JourneysFetchTask();
+        journeysFetchTask.execute("http://594569d3.ngrok.io/api/v1/cars/AUBT9863/journeys/");
+        //recyclerView.setItemAnimator(new DefaultItemAnimator());
     }
 
 //    @Override
@@ -208,31 +210,71 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String jsonData) {
-//            ArrayList<PatientModel> patientModelArrayList = new ArrayList<>();
-//            super.onPostExecute(jsonData);
-//            try {
-//                JSONObject jsonObject = new JSONObject(jsonData);
-//                JSONArray resultArray = jsonObject.getJSONArray("results");
-//                for (int i=0; i < resultArray.length(); i++){
-//                    JSONObject patient = (JSONObject) resultArray.get(i);
-//                    Log.i("reults",patient.toString());
-//                    PatientModel patientModel = new PatientModel();
-//                    patientModel.setPatientId(patient.get("patient_id").toString());
-//                    patientModel.setPatientName(patient.get("patient_name").toString());
-//                    patientModel.setPatientGender(patient.get("patient_gender").toString());
-//                    patientModel.setPatientLocation(patient.get("patient_location").toString());
-//                    patientModel.setPatientPhoneNumber(patient.get("patient_phone_no").toString());
-//                    patientModel.setPatientPulseRate(patient.get("patient_heartbeat").toString());
-//                    patientModel.setPatientRoomtemp(patient.get("patient_room_temp").toString());
-//                    patientModel.setPatientStatus(patient.get("patient_status").toString());
-//                    patientModel.setPatientTemp(patient.get("patient_temp").toString());
-//                    patientModelArrayList.add(patientModel);
-//                }
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
-//            patientAdapter = new PatientAdapter(getApplicationContext(),patientModelArrayList);
-//            recyclerView.setAdapter(patientAdapter);
+            Log.e("data",jsonData);
+        }
+
+        @Override
+        protected void onCancelled(String arrayList) {
+            super.onCancelled(arrayList);
+        }
+    }
+
+    public class JourneysFetchTask extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... params) {
+            HttpURLConnection urlConnection = null;
+            BufferedReader reader = null;
+            String jsonData = null;
+            try {
+                //setting the urlConnection
+                Log.v("hello","from back ground thread");
+                URL url = new URL(params[0]);
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setRequestMethod("GET");
+                urlConnection.connect();
+
+                InputStream stream = urlConnection.getInputStream();
+                if (stream == null){
+                    jsonData = null;
+                }
+                StringBuffer stringBuffer = new StringBuffer();
+                reader = new BufferedReader(new InputStreamReader(stream));
+                String inputLine;
+                while ((inputLine = reader.readLine()) != null){
+                    stringBuffer.append(inputLine + "\n");
+                }
+                if (stringBuffer.length() == 0){
+                    jsonData = null;
+                }
+                jsonData = stringBuffer.toString();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            finally {
+                if (urlConnection != null) {
+                    urlConnection.disconnect();
+                }
+                if (reader != null) {
+                    try {
+                        reader.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            return jsonData;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onPostExecute(String jsonData) {
+            Log.e("data-journey",jsonData);
         }
 
         @Override

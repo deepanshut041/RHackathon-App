@@ -2,6 +2,7 @@ package com.example.deepanshu.rjshs_app;
 
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -11,10 +12,16 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
+
+import com.example.deepanshu.rjshs_app.models.CarJourney;
+import com.example.deepanshu.rjshs_app.models.StatusModel;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,6 +35,7 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private RecyclerView recyclerView;
+    private TextView statusTextView, numberTextView, latTextView, lonTextView, tempTextView, fuelTextView;
 //    private PatientAdapter patientAdapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +43,18 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         //toolbar = (Toolbar) findViewById(R.id.main_toolbar);
         //setSupportActionBar(toolbar);
+
+
+        //Stetting textView
+        statusTextView = (TextView)findViewById(R.id.car_status_status);
+        numberTextView = (TextView)findViewById(R.id.car_status_number);
+        latTextView = (TextView)findViewById(R.id.car_status_lat);
+        lonTextView = (TextView)findViewById(R.id.car_status_lon);
+        tempTextView = (TextView)findViewById(R.id.car_status_temp);
+        fuelTextView = (TextView)findViewById(R.id.car_status_fuel);
+
+
+
         //recyclerView = (RecyclerView) findViewById(R.id.patient_recyclerView);
         //LinearLayoutManager layoutManagerCast = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         //recyclerView.setLayoutManager(layoutManagerCast);
@@ -210,7 +230,26 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String jsonData) {
-            Log.e("data",jsonData);
+            StatusModel statusModel = new StatusModel();
+            super.onPostExecute(jsonData);
+            try {
+                JSONObject jsonObject = new JSONObject(jsonData);
+                statusModel.setCarStatus(jsonObject.get("car_status").toString());
+                statusModel.setCarNumber(jsonObject.get("car_number").toString());
+                statusModel.setCarLat(jsonObject.get("car_lat").toString());
+                statusModel.setCarLon(jsonObject.get("car_lon").toString());
+                statusModel.setCarFuel(jsonObject.get("car_fuel").toString());
+                statusModel.setCarTemp(jsonObject.get("car_temp").toString());
+                statusTextView.setText(statusModel.getCarStatus());
+                numberTextView.setText(statusModel.getCarNumber());
+                latTextView.setText(statusModel.getCarLat());
+                lonTextView.setText(statusModel.getCarLon());
+                tempTextView.setText(statusModel.getCarTemp());
+                fuelTextView.setText(statusModel.getCarFuel());
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
 
         @Override
@@ -280,6 +319,70 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onCancelled(String arrayList) {
             super.onCancelled(arrayList);
+        }
+    }
+    class JourneyAdapter extends RecyclerView.Adapter<JourneyAdapter.journeyViewHolder> {
+        public ArrayList<CarJourney> carJourneys;
+
+        class journeyViewHolder extends RecyclerView.ViewHolder {
+            TextView
+            ConstraintLayout constraintLayout;
+
+            public journeyViewHolder(View itemView) {
+                super(itemView);
+                patientNo = (TextView) itemView.findViewById(R.id.patient_item_id);
+                patientName = (TextView) itemView.findViewById(R.id.patient_item_name);
+                patientGender = (TextView) itemView.findViewById(R.id.patient_item_gender);
+                constraintLayout = (ConstraintLayout) itemView.findViewById(R.id.patient_recyclerView);
+            }
+        }
+
+        public PatientAdapter(Context context, ArrayList<PatientModel> arrayList) {
+            this.patientArrayList = arrayList;
+            this.patientContext = context;
+        }
+
+        @Override
+        public patientViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.patient_recycler, parent, false);
+            return new patientViewHolder(itemView);
+        }
+
+        @Override
+        public void onBindViewHolder(final patientViewHolder holder, int position) {
+            final PatientModel patientModel = patientArrayList.get(position);
+
+            holder.patientNo.setText(patientModel.getPatientId());
+            holder.patientName.setText(patientModel.getPatientName());
+            holder.patientGender.setText(patientModel.getPatientGender());
+            if (patientModel.getPatientStatus().equals("help")){
+                holder.constraintLayout.setBackgroundColor(patientContext.getResources().getColor(R.color.colorDanger));
+            }
+            holder.constraintLayout.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(patientContext, PatientDetailActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    Bundle mBundle = new Bundle();
+                    //mBundle.putString("type","celebs");
+                    mBundle.putString("id",patientModel.getPatientId());
+                    mBundle.putString("gender",patientModel.getPatientGender());
+                    mBundle.putString("loc",patientModel.getPatientLocation());
+                    mBundle.putString("name",patientModel.getPatientName());
+                    mBundle.putString("phn",patientModel.getPatientPhoneNumber());
+                    mBundle.putString("rate",patientModel.getPatientPulseRate());
+                    mBundle.putString("rtemp",patientModel.getPatientRoomtemp());
+                    mBundle.putString("status",patientModel.getPatientStatus());
+                    mBundle.putString("temp",patientModel.getPatientTemp());
+                    intent.putExtras(mBundle);
+                    patientContext.startActivity(intent);
+                }
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return patientArrayList.size();
         }
     }
 
